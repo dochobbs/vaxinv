@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vaxinv
+      POSTGRES_USER: vaxinv
+      POSTGRES_PASSWORD: vaxinv_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DB_CLIENT: pg
+      DB_CONNECTION: postgres://vaxinv:vaxinv_secret@db:5432/vaxinv
+      SESSION_SECRET: change-me-in-production
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
