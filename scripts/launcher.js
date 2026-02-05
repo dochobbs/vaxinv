@@ -12,12 +12,51 @@ const fs = require('fs');
 const crypto = require('crypto');
 const net = require('net');
 const { execSync } = require('child_process');
+const Module = require('module');
+
+// Directory containing the actual binary (for finding native addons)
+const binDir = path.dirname(process.execPath);
+
+// Redirect native .node addon resolution from pkg snapshot to real filesystem.
+// Native addons can't execute from inside the snapshot, so we intercept module
+// resolution and point .node requires to files placed next to the binary.
+const origResolveFilename = Module._resolveFilename;
+Module._resolveFilename = function (request, parent, isMain, options) {
+  // If requesting a .node file, check next to the binary first
+  if (request.endsWith('.node')) {
+    const beside = path.join(binDir, path.basename(request));
+    if (fs.existsSync(beside)) {
+      return beside;
+    }
+  }
+  // For paths that resolve to .node files in the snapshot, redirect
+  try {
+    const resolved = origResolveFilename.call(this, request, parent, isMain, options);
+    if (resolved.endsWith('.node') && resolved.includes('/snapshot/')) {
+      const beside = path.join(binDir, path.basename(resolved));
+      if (fs.existsSync(beside)) {
+        return beside;
+      }
+    }
+    return resolved;
+  } catch (err) {
+    // If resolution failed for a .node file, try beside the binary
+    if (request.endsWith('.node') || (err.message && err.message.includes('.node'))) {
+      const basename = path.basename(request).replace(/(\.node)?$/, '.node');
+      const beside = path.join(binDir, basename);
+      if (fs.existsSync(beside)) {
+        return beside;
+      }
+    }
+    throw err;
+  }
+};
 
 // Determine data directory
 // .app mode uses ~/Library/Application Support/VaxInv (set by wrapper script)
 // Direct binary mode uses VaxInv-Data/ next to the executable
 const dataDir = process.env.VAXINV_DATA_DIR ||
-  path.join(path.dirname(process.execPath), 'VaxInv-Data');
+  path.join(binDir, 'VaxInv-Data');
 
 // Config file for persisted settings
 const configPath = path.join(dataDir, '.vaxinv-config.json');
@@ -101,7 +140,7 @@ async function main() {
   console.log('');
 
   // Run migrations and seeds
-  const knex = require('knex');
+  const knex = require('../backend/node_modules/knex');
   const knexConfig = require('../backend/src/db/knexfile');
   const db = knex(knexConfig.standalone);
 
