@@ -15,31 +15,186 @@ Vaccine inventory management system for pediatric clinics with VFC/private track
 - **Audit trail** — every create, update, receive, administer, and adjust is logged
 - **Role-based access** — admin, manager, and MA roles with PIN or password login
 
-## Quick Start (Local Development)
+## Why We Built It This Way
 
-**Prerequisites:** Node.js 20+
+Pediatric clinics participating in the **Vaccines for Children (VFC)** program must follow strict CDC inventory and storage rules. Most practices track this with spreadsheets or paper logs — which means manual errors, missed expirations, and audit headaches. VaxInv replaces that workflow with software that enforces the rules automatically.
+
+### Design decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **VFC / Private funding split** | VFC is a federal entitlement program. Clinics must track VFC-funded and privately purchased doses separately. Mixing them is an audit finding. The system enforces this at every receive, administer, and adjustment. |
+| **FEFO enforcement** | The CDC requires First Expired, First Out usage to minimize waste. VaxInv sorts available lots by expiration date and selects the earliest automatically — staff cannot skip ahead to a newer lot. |
+| **Multi-dose vial tracking** | Opened multi-dose vials (flu, MMR) have a beyond-use date set by the manufacturer. The system records when a vial is opened, calculates the discard deadline, and surfaces alerts before it expires. |
+| **Temperature monitoring (36–46 °F)** | CDC guidelines require twice-daily temperature logs and immediate action on excursions. VaxInv flags out-of-range readings instantly and includes them in reports for VFC site visits. |
+| **PIN login for MAs** | Medical assistants administer dozens of doses per day. A 6-digit PIN is fast enough for point-of-care use without slowing down patient flow. Admins and managers use full passwords for sensitive operations. |
+| **NDC barcode scanning** | Scanning the barcode on a vaccine box auto-matches the NDC code to the correct vaccine in the catalog, eliminating manual selection errors during receiving. |
+| **Audit trail on every action** | VFC auditors can request a full history of every dose received, administered, wasted, or transferred. The audit log captures who did what, when, and where — with no way to edit or delete entries. |
+| **SQLite for dev, PostgreSQL for prod** | SQLite means zero setup to get running locally — no database server to install. Production uses PostgreSQL for concurrency, reliability, and proper backups. Knex abstracts the difference so the same code runs on both. |
+| **Session-based auth (not tokens)** | This is an internal clinic tool behind a login screen, not a public API. Server-side sessions are simpler to manage, easier to revoke, and auto-expire after 8 hours of inactivity. |
+| **Single Docker container** | Small clinics don't have IT staff. `docker compose up` gets the full system running with PostgreSQL in one command. No Kubernetes, no microservices, no complexity that doesn't earn its keep. |
+| **Pre-loaded vaccine catalog** | 20 pediatric vaccines with correct CVX, CPT, and NDC codes are seeded on first run. Clinics can start receiving inventory immediately without manual vaccine setup. |
+
+---
+
+## Install Guide (Step by Step)
+
+This section is for anyone setting up VaxInv for the first time, even if you've never used a terminal before. Follow every step in order.
+
+### Step 1: Install Node.js
+
+VaxInv runs on Node.js, a free program that executes JavaScript on your computer.
+
+**Mac:**
+
+1. Open **Terminal** (press `Cmd + Space`, type `Terminal`, press Enter)
+2. Install Homebrew (a package manager) by pasting this line and pressing Enter:
+   ```
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+3. When it finishes, install Node.js:
+   ```
+   brew install node
+   ```
+
+**Windows:**
+
+1. Go to https://nodejs.org
+2. Click the big green button that says **"LTS"** (Long Term Support)
+3. Run the downloaded installer — accept all defaults, click Next through every screen
+4. When it finishes, open **Command Prompt** (press `Win + R`, type `cmd`, press Enter)
+
+**Verify it worked** (both Mac and Windows):
+
+```
+node --version
+```
+
+You should see something like `v20.x.x` or `v22.x.x`. Any version 20 or higher is fine.
+
+### Step 2: Download VaxInv
+
+If you received VaxInv as a zip file, unzip it and note where you put it. Example: `Downloads/vaxinv`.
+
+If you have Git installed and a repository URL:
+
+```
+git clone <repo-url>
+```
+
+### Step 3: Open a terminal in the VaxInv folder
+
+**Mac:**
+
+```
+cd ~/Downloads/vaxinv
+```
+
+(Adjust the path if you put it somewhere else.)
+
+**Windows:**
+
+```
+cd %USERPROFILE%\Downloads\vaxinv
+```
+
+### Step 4: Install dependencies
+
+Run these three commands one at a time. Each one will print a lot of output — wait for it to finish before running the next.
+
+```
+npm install
+```
+
+```
+cd backend && npm install && cd ..
+```
+
+```
+cd frontend && npm install && cd ..
+```
+
+### Step 5: Set up the database
+
+This creates the database tables and loads the vaccine catalog:
+
+```
+npm run migrate
+```
+
+```
+npm run seed
+```
+
+You should see output about migrations running and seeds completing. No errors means it worked.
+
+### Step 6: Start VaxInv
+
+```
+npm run dev
+```
+
+You'll see output from two servers starting. When you see lines mentioning both `backend` and `frontend` running, it's ready.
+
+### Step 7: Open VaxInv in your browser
+
+Open your web browser (Chrome, Safari, Edge, Firefox) and go to:
+
+```
+http://localhost:5173
+```
+
+### Step 8: Log in
+
+Use these credentials to log in for the first time:
+
+| Field    | Value      |
+|----------|------------|
+| Username | `admin`    |
+| Password | `admin123` |
+
+Or log in with a PIN:
+
+| Field | Value    |
+|-------|----------|
+| PIN   | `123456` |
+
+**After logging in**, go to the Users page and create accounts for your staff, then change the admin password.
+
+### Step 9: Stop the server
+
+When you're done, go back to the terminal and press `Ctrl + C` to stop both servers.
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `node: command not found` | Node.js isn't installed. Go back to Step 1. |
+| `npm: command not found` | Same as above — npm comes with Node.js. |
+| `EACCES: permission denied` | On Mac, prefix the command with `sudo` (e.g., `sudo npm install`). |
+| Port 3000 already in use | Another program is using that port. Close it, or set a different port: `PORT=3001 npm run dev` |
+| Port 5173 already in use | Close other Vite dev servers, or check for other `npm run dev` processes. |
+| `Cannot find module` errors | Re-run `npm install` in the folder that had the error (root, backend, or frontend). |
+| Page won't load in browser | Make sure both servers are running. The terminal should show output from both. |
+| Login doesn't work | Run `npm run seed` again to reset the default admin account. |
+
+---
+
+## Quick Start (Developers)
+
+If you're comfortable with a terminal:
 
 ```bash
 git clone <repo-url> && cd vaxinv
 npm install
 cd backend && npm install && cd ..
 cd frontend && npm install && cd ..
-
-# Create the database, run migrations, and seed
 npm run migrate
 npm run seed
-
-# Start both servers (backend :3000, frontend :5173)
 npm run dev
 ```
 
-Open http://localhost:5173 and log in:
-
-| Field    | Value      |
-|----------|------------|
-| Username | `admin`    |
-| Password | `admin123` |
-| PIN      | `123456`   |
+Open http://localhost:5173. Login: `admin` / `admin123` / PIN `123456`.
 
 ## Production Deployment (Docker)
 
