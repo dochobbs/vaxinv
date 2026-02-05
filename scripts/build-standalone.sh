@@ -78,6 +78,9 @@ cp "$SCRIPT_DIR/macos/Info.plist" "$CONTENTS_DIR/Info.plist"
 cp "$SCRIPT_DIR/macos/vaxinv-wrapper.sh" "$MACOS_DIR/$APP_NAME"
 chmod +x "$MACOS_DIR/$APP_NAME"
 
+# Copy icon
+cp "$SCRIPT_DIR/macos/VaxInv.icns" "$RESOURCES_DIR/VaxInv.icns"
+
 # Move binary and native addons into Resources
 mv "$DIST_DIR/$APP_NAME" "$RESOURCES_DIR/$APP_NAME"
 [ -f "$DIST_DIR/better_sqlite3.node" ] && mv "$DIST_DIR/better_sqlite3.node" "$RESOURCES_DIR/"
