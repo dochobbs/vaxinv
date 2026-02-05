@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const db = require('./db/connection');
 
 const authRoutes = require('./routes/auth');
+const vaccineRoutes = require('./routes/vaccines');
 
 const app = express();
 
@@ -55,5 +56,6 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/vaccines', vaccineRoutes);
 
 module.exports = app;
