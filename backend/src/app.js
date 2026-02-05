@@ -9,6 +9,7 @@ const db = require('./db/connection');
 const authRoutes = require('./routes/auth');
 const vaccineRoutes = require('./routes/vaccines');
 const inventoryRoutes = require('./routes/inventory');
+const administrationRoutes = require('./routes/administrations');
 
 const app = express();
 
@@ -59,5 +60,6 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/vaccines', vaccineRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/administrations', administrationRoutes);
 
 module.exports = app;
