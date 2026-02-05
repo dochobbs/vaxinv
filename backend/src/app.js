@@ -10,6 +10,12 @@ const authRoutes = require('./routes/auth');
 const vaccineRoutes = require('./routes/vaccines');
 const inventoryRoutes = require('./routes/inventory');
 const administrationRoutes = require('./routes/administrations');
+const adjustmentRoutes = require('./routes/adjustments');
+const temperatureRoutes = require('./routes/temperature');
+const locationRoutes = require('./routes/locations');
+const userRoutes = require('./routes/users');
+const reportRoutes = require('./routes/reports');
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 
@@ -61,5 +67,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vaccines', vaccineRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/administrations', administrationRoutes);
+app.use('/api/adjustments', adjustmentRoutes);
+app.use('/api/temperature', temperatureRoutes);
+app.use('/api/locations', locationRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 module.exports = app;
