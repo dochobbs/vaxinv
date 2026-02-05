@@ -39,6 +39,22 @@ const config = {
       directory: path.resolve(__dirname, 'seeds'),
     },
   },
+  standalone: {
+    client: 'better-sqlite3',
+    connection: {
+      filename: path.join(
+        process.env.VAXINV_DATA_DIR || path.resolve(__dirname, '../data'),
+        'vaxinv.db'
+      ),
+    },
+    useNullAsDefault: true,
+    migrations: {
+      directory: path.resolve(__dirname, 'migrations'),
+    },
+    seeds: {
+      directory: path.resolve(__dirname, 'seeds'),
+    },
+  },
 };
 
 module.exports = config;

@@ -3,6 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "description": "Vaccine Inventory Management System",
+  "bin": "scripts/launcher.js",
+  "pkg": {
+    "targets": [
+      "node22-macos-arm64"
+    ],
+    "assets": [
+      "backend/src/**/*.js",
+      "backend/src/db/migrations/**",
+      "backend/src/db/seeds/**",
+      "frontend/dist/**"
+    ],
+    "outputPath": "dist-standalone"
+  },
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
@@ -11,9 +24,11 @@
     "start": "cd backend && npm start",
     "test": "cd backend && npm test",
     "migrate": "cd backend && npm run migrate",
-    "seed": "cd backend && npm run seed"
+    "seed": "cd backend && npm run seed",
+    "build:standalone": "bash scripts/build-standalone.sh"
   },
   "devDependencies": {
+    "@yao-pkg/pkg": "^6.12.0",
     "concurrently": "^8.2.0"
   }
 }
